@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FSociety | Профиль хакера</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Courier New', monospace;
+      background: #0a0a0a;
+      color: #00ff41;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      position: relative;
+      overflow-x: hidden;
+    }
+    #matrix-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      opacity: 0.15;
+      pointer-events: none;
+    }
+    .card {
+      position: relative;
+      z-index: 1;
+      max-width: 780px;
+      width: 100%;
+      background: rgba(10, 10, 10, 0.85);
+      border: 2px solid #00ff41;
+      border-radius: 18px;
+      padding: 40px 35px;
+      box-shadow: 0 0 30px rgba(0, 255, 65, 0.2);
+      backdrop-filter: blur(4px);
+      animation: fadeIn 1.2s ease;
+    }
+    @keyframes fadeIn {
+      0% { opacity: 0; transform: translateY(20px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    .glitch {
+      font-size: 2.8rem;
+      font-weight: bold;
+      color: #00ff41;
+      text-shadow: 2px 2px 0 #003300, -2px -2px 0 #00ff41;
+      animation: glitch 0.8s infinite alternate;
+      letter-spacing: 2px;
+      word-break: break-word;
+    }
+    @keyframes glitch {
+      0% { transform: skew(0deg); text-shadow: 2px 2px 0 #003300; }
+      25% { transform: skew(1deg); text-shadow: -2px -2px 0 #00ff41; }
+      50% { transform: skew(-1deg); text-shadow: 2px -2px 0 #003300; }
+      75% { transform: skew(0.5deg); text-shadow: -2px 2px 0 #00ff41; }
+      100% { transform: skew(0deg); text-shadow: 2px 2px 0 #003300; }
+    }
+    .status {
+      font-size: 0.8rem;
+      color: #88ff88;
+      margin-top: 6px;
+      letter-spacing: 1px;
+      border-left: 2px solid #00ff41;
+      padding-left: 12px;
+      animation: blink 1.5s infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* ----- АВАТАР ----- */
+    .avatar {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .avatar img {
+      width: 130px;
+      height: 130px;
+      border-radius: 50%;
+      border: 3px solid #00ff41;
+      object-fit: cover;
+      box-shadow: 0 0 20px rgba(0,255,65,0.3);
+      transition: transform 0.3s;
+    }
+    .avatar img:hover {
+      transform: scale(1.04);
+    }
+
+    /* ----- ОНЛАЙН СТАТУС (API) ----- */
+    .online-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 12px 0 20px 0;
+      font-size: 0.95rem;
+      color: #88ff88;
+      justify-content: center;
+    }
+    .dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #00ff41;
+      animation: pulse-dot 1.8s infinite;
+      display: inline-block;
+    }
+    @keyframes pulse-dot {
+      0% { box-shadow: 0 0 0 0 #00ff41; }
+      70% { box-shadow: 0 0 0 10px rgba(0,255,65,0); }
+      100% { box-shadow: 0 0 0 0 rgba(0,255,65,0); }
+    }
+    .dot.offline {
+      background: #555;
+      animation: none;
+      box-shadow: none;
+    }
+
+    .cmd-block {
+      margin-top: 28px;
+      border-left: 3px solid #00ff41;
+      padding-left: 18px;
+    }
+    .cmd-prompt {
+      font-size: 0.9rem;
+      color: #88ff88;
+      margin-bottom: 4px;
+    }
+    .cmd-prompt::before {
+      content: '> ';
+      color: #00ff41;
+    }
+    .cmd-output {
+      font-size: 1rem;
+      line-height: 1.6;
+      color: #c0ffc0;
+      padding-left: 10px;
+    }
+
+    .skill {
+      margin: 14px 0;
+    }
+    .skill-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+      color: #aaffaa;
+    }
+    .skill-bar {
+      width: 100%;
+      height: 8px;
+      background: #1a2a1a;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+    .skill-fill {
+      height: 100%;
+      background: #00ff41;
+      width: 0%;
+      border-radius: 4px;
+      transition: width 1.5s ease;
+    }
+
+    .contacts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 22px;
+    }
+    .contacts a {
+      color: #00ff41;
+      text-decoration: none;
+      border: 1px solid #00ff41;
+      padding: 8px 20px;
+      border-radius: 30px;
+      font-size: 0.85rem;
+      transition: 0.3s;
+      background: transparent;
+    }
+    .contacts a:hover {
+      background: #00ff41;
+      color: #000;
+      box-shadow: 0 0 18px #00ff41;
+      transform: scale(1.02);
+    }
+
+    .footer {
+      margin-top: 30px;
+      font-size: 0.75rem;
+      color: #446644;
+      text-align: center;
+      border-top: 1px solid #1a2a1a;
+      padding-top: 18px;
+    }
+
+    @media (max-width: 600px) {
+      .card { padding: 24px 18px; }
+      .glitch { font-size: 1.8rem; }
+      .cmd-output { font-size: 0.9rem; }
+      .contacts a { padding: 6px 14px; font-size: 0.75rem; }
+      .avatar img { width: 90px; height: 90px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- МАТРИЦА -->
+  <canvas id="matrix-canvas"></canvas>
+
+  <div class="card">
+
+    <!-- АВАТАР (вставь свою картинку) -->
+    <div class="avatar">
+      <img src="https://i.imgur.com/KbX0oNf.jpeg" alt="avatar" id="avatar-img">
+    </div>
+
+    <!-- ЗАГОЛОВОК -->
+    <h1 class="glitch">$> FSOCIETY</h1>
+    <div class="status">[ СИСТЕМА АКТИВИРОВАНА ]</div>
+
+    <!-- ОНЛАЙН СТАТУС (через API) -->
+    <div class="online-status">
+      <span class="dot" id="status-dot"></span>
+      <span id="status-text">Загрузка...</span>
+    </div>
+
+    <!-- О СЕБЕ -->
+    <div class="cmd-block">
+      <div class="cmd-prompt">whoami</div>
+      <div class="cmd-output">
+        <strong>fsociety</strong><br>
+        address not found<br>
+        OSINT-исследователь, этичный хакер,
+        студент IT-колледжа.
+      </div>
+    </div>
+
+    <!-- НАВЫКИ -->
+    <div class="cmd-block">
+      <div class="cmd-prompt">skills —list</div>
+      <div class="cmd-output">
+        <div class="skill">
+          <div class="skill-label"><span>🐧 Linux / Kali</span><span>85%</span></div>
+          <div class="skill-bar"><div class="skill-fill" style="width:85%;"></div></div>
+        </div>
+        <div class="skill">
+          <div class="skill-label"><span>🕵️ OSINT</span><span>80%</span></div>
+          <div class="skill-bar"><div class="skill-fill" style="width:80%;"></div></div>
+        </div>
+        <div class="skill">
+          <div class="skill-label"><span>🐍 Python</span><span>70%</span></div>
+          <div class="skill-bar"><div class="skill-fill" style="width:70%;"></div></div>
+        </div>
+        <div class="skill">
+          <div class="skill-label"><span>🌐 Сети / Nmap</span><span>75%</span></div>
+          <div class="skill-bar"><div class="skill-fill" style="width:75%;"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ИНСТРУМЕНТЫ -->
+    <div class="cmd-block">
+      <div class="cmd-prompt">tools —list</div>
+      <div class="cmd-output">
+        Nmap · Sherlock · Maigret · Holehe · Metasploit · Kali Linux
+      </div>
+    </div>
+
+    <!-- КОНТАКТЫ -->
+    <div class="cmd-block">
+      <div class="cmd-prompt">contacts —show</div>
+      <div class="contacts">
+        <a href="https://t.me/I_m_untalented" target="_blank">📡 Telegram</a>
+        <a href="https://github.com/nikitasapiznikov80-beep/fsociety.github.io" target="_blank">🐙 GitHub</a>
+      </div>
+    </div>
+
+    <!-- КНОПКА -->
+    <div class="cmd-block" style="border-left-color:#224422;">
+      <button id="hack-btn" style="
+        background: transparent;
+        color: #00ff41;
+        border: 2px solid #00ff41;
+        padding: 12px 24px;
+        font-family: 'Courier New', monospace;
+        font-size: 1rem;
+        font-weight: bold;
+        cursor: pointer;
+        border-radius: 40px;
+        transition: 0.3s;
+        margin-top: 6px;
+        width: 100%;
+      ">
+        ▶ INITIALIZE_ACCESS
+      </button>
+      <div id="access-message" style="margin-top:10px; color:#88ff88; font-size:0.85rem; min-height:22px;"></div>
+    </div>
+
+    <div class="footer">⚡ FSociety · 2026 · made with 0x00</div>
+  </div>
+
+  <script>
+    // ========== МАТРИЦА ==========
+    const canvas = document.getElementById('matrix-canvas');
+    const ctx = canvas.getContext('2d');
+    let w = window.innerWidth, h = window.innerHeight;
+    canvas.width = w; canvas.height = h;
+    const letters = '0123456789абвгдеёжзийклмнопрстуфхцчшщъыьэюя';
+    const fontSize = 14;
+    const columns = Math.ceil(w / fontSize);
+    let drops = new Array(columns).fill(1);
+
+    function drawMatrix() {
+      ctx.fillStyle = 'rgba(0,0,0,0.03)';
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#00ff41';
+      ctx.font = fontSize + 'px monospace';
+      for (let i = 0; i < drops.length; i++) {
+        const char = letters[Math.floor(Math.random() * letters.length)];
+        ctx.fillText(char, i * fontSize, drops[i] * fontSize);
+        if (drops[i] * fontSize > h && Math.random() > 0.975) drops[i] = 0;
+        drops[i]++;
+      }
+    }
+    setInterval(drawMatrix, 40);
+    window.addEventListener('resize', () => {
+      w = window.innerWidth; h = window.innerHeight;
+      canvas.width = w; canvas.height = h;
+    });
+
+    // ========== КНОПКА ==========
+    const btn = document.getElementById('hack-btn');
+    const msg = document.getElementById('access-message');
+    btn.addEventListener('click', () => {
+      if (btn.textContent.includes('INITIALIZE')) {
+        btn.textContent = '⏳ ДОСТУП ПРЕДОСТАВЛЕН';
+        btn.style.background = '#00ff41';
+        btn.style.color = '#000';
+        msg.textContent = '✅ Добро пожаловать, Агент. Система открыта.';
+        msg.style.color = '#88ff88';
+      } else {
+        btn.textContent = '▶ INITIALIZE_ACCESS';
+        btn.style.background = 'transparent';
+        btn.style.color = '#00ff41';
+        msg.textContent = '⛔ Доступ закрыт.';
+        msg.style.color = '#ff6666';
+      }
+    });
+
+    // ========== ОНЛАЙН СТАТУС (реальный API) ==========
+    async function updateOnlineStatus() {
+      const dot = document.getElementById('status-dot');
+      const text = document.getElementById('status-text');
+
+      try {
+        // Пингуем надёжный сервер (Google DNS) через fetch с таймаутом
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 4000);
+
+        const response = await fetch('https://dns.google/resolve?name=google.com&type=A', {
+          signal: controller.signal,
+          cache: 'no-store'
+        });
+
+        clearTimeout(timeout);
+
+        if (response.ok) {
+          dot.className = 'dot';
+          text.textContent = '● Онлайн (API доступен)';
+          text.style.color = '#88ff88';
+        } else {
+          throw new Error('Ответ не OK');
+        }
+      } catch (error) {
+        dot.className = 'dot offline';
+        text.textContent = '○ Офлайн (нет соединения)';
+        text.style.color = '#666';
+      }
+    }
+
+    // Запускаем сразу и обновляем каждые 30 секунд
+    updateOnlineStatus();
+    setInterval(updateOnlineStatus, 30000);
+  </script>
+</body>
+</html>
